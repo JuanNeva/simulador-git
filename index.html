@@ -1,0 +1,542 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>La máquina del tiempo averiada</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: columna de misión (portada, fases, ejercicios, preguntas) junto a una columna fija con la escena visual y el terminal; en móvil se apilan. */
+:root{
+  --bg:#E6EBEF; --panel:#F4F7F9; --fg:#14232F; --muted:#51636F; --line:#C7D1D8;
+  --accent:#8F5508; --accent-ink:#FFFFFF; --ok:#17695B; --ok-bg:#DCEFEA; --err:#A63232; --err-bg:#F6E1E1; --warn:#7A5B00;
+  --book2:#2F5D7C;
+  --term-bg:#0F1A23; --term-fg:#D6E3EA; --term-dim:#8199A8; --term-prompt:#E3A94B;
+  --term-green:#6ED3A8; --term-red:#FF8A80; --term-yellow:#F0D36A; --term-cyan:#79C7E3; --term-blue:#8EB8FF; --term-line:#22323E;
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B131A; --panel:#121E27; --fg:#E3ECF1; --muted:#93A6B3; --line:#25353F;
+  --accent:#E3A94B; --accent-ink:#1A1204; --ok:#5FCBA3; --ok-bg:#12312B; --err:#FF8A80; --err-bg:#3A1D1F; --warn:#E3C65A; --book2:#6FA3C7;
+  --term-bg:#070D12; --term-line:#1B2933; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0B131A; --panel:#121E27; --fg:#E3ECF1; --muted:#93A6B3; --line:#25353F;
+  --accent:#E3A94B; --accent-ink:#1A1204; --ok:#5FCBA3; --ok-bg:#12312B; --err:#FF8A80; --err-bg:#3A1D1F; --warn:#E3C65A; --book2:#6FA3C7;
+  --term-bg:#070D12; --term-line:#1B2933; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+.top{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.top h1{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:700}
+.top p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.ring{display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--muted)}
+.ring svg{display:block;flex:none}
+.ring .sc{display:block;font-size:.85rem}
+.ring .sc b{font:700 1.5rem var(--f-display);color:var(--fg)}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px}
+.ph{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 10px;text-align:left;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ph small{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ph span{font-family:var(--f-display);font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+.ph[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.ph.done small::after{content:" · completada";color:var(--ok);text-transform:none;letter-spacing:0}
+.ph:disabled{opacity:.5;cursor:not-allowed}
+.ph:disabled small::after{content:" · bloqueada";text-transform:none;letter-spacing:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media (min-width:980px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}.right{position:sticky;top:12px;height:max(640px,calc(100dvh - 24px))}.termwrap{flex:1 1 220px;min-height:220px}.scene{max-height:62%}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;min-width:0}
+.left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.kick{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card h2{font-size:1.6rem;margin:2px 0 10px}
+.card h3{font-size:1.05rem;margin:0 0 10px}
+.card ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.story{margin:0 0 10px;max-width:65ch}
+.goal{margin:0;padding:10px 12px;background:var(--bg);border-radius:6px;font-size:.95rem}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.step{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px}
+.tick{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.75rem;margin-top:2px;color:transparent}
+.step.done .tick{background:var(--ok);border-color:var(--ok);color:#fff}
+.step.done .st{color:var(--muted)}
+.st{overflow-wrap:anywhere}
+.pts{display:inline-block;margin-left:6px;font:600 .75rem var(--f-mono);color:var(--muted);white-space:nowrap}
+.step.done .pts{color:var(--ok)}
+details{margin-top:4px}
+summary{cursor:pointer;color:var(--accent);font-size:.88rem;font-weight:600}
+details p{margin:6px 0 0;font-size:.9rem;color:var(--muted)}
+details code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);padding:8px 10px;border-radius:4px;margin-top:6px;color:var(--fg)}
+.box{margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:6px;font-size:.9rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input[type=text]{flex:1 1 200px;min-width:0}
+input[type=text]{font:inherit;font-family:var(--f-mono);font-size:.9rem;padding:7px 9px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--fg)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:6px 12px;font-weight:600;font-size:.9rem}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fb{margin:6px 0 0;padding:6px 10px;border-radius:5px;font-size:.9rem}
+.fb.ok{background:var(--ok-bg);color:var(--ok)}
+.fb.bad{background:var(--err-bg);color:var(--err)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right;font-family:var(--f-mono);white-space:nowrap}
+tfoot td{font-weight:700;border-bottom:0}
+.tw{overflow-x:auto}
+fieldset{border:0;border-top:1px solid var(--line);padding:12px 0 0;margin:12px 0 0;min-width:0}
+legend{padding:0 0 6px;font-weight:600;float:left;width:100%}
+fieldset label{display:flex;gap:8px;align-items:flex-start;padding:3px 0;clear:both}
+fieldset input{margin-top:5px}
+.deliv{font-size:.9rem;color:var(--muted)}
+.win{border-color:var(--ok);background:var(--ok-bg)}
+.scene{flex:0 1 auto;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.scene h3{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-family:var(--f-body);font-weight:600}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.tile{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:8px;min-width:0}
+.tile.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.tile.off{border-style:dashed;opacity:.65;cursor:default}
+.tile .ti{flex:none;width:34px;height:40px;display:grid;place-items:center}
+.tile .tt{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.tile b{font-size:.85rem;overflow-wrap:anywhere}
+.tile span,.tile em{font-size:.74rem;color:var(--muted);font-style:normal;overflow-wrap:anywhere}
+.bk{width:30px;height:36px}.bk .cov{fill:var(--accent)}.bk.rem .cov{fill:var(--book2)}
+.bk .pg{fill:#fff;opacity:.7}.bk .sp{fill:#000;opacity:.25}
+.mon{width:32px;height:30px;fill:none;stroke:var(--muted);stroke-width:2}
+.fh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0 6px;font-size:.85rem}
+.fh b{font-family:var(--f-mono)}
+.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.zone{border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--bg);min-width:0}
+.zone h4{margin:0;font:600 .8rem var(--f-display)}
+.zone small{display:block;color:var(--muted);font-size:.7rem;margin-bottom:6px}
+.zone ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto}
+.fc,.cm{display:flex;gap:6px;align-items:center;font:.74rem var(--f-mono);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:3px 6px;min-width:0;overflow-wrap:anywhere}
+.fc::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.fc.u::before{background:var(--err)}.fc.m::before{background:var(--warn)}.fc.s::before{background:var(--ok)}
+.cm .h{color:var(--accent);flex:none}
+.cm{flex-wrap:wrap}
+.cm .ms{font-family:var(--f-body);font-size:.78rem;min-width:0;flex:1 1 100%}
+.pill{flex:none;font:600 .62rem var(--f-mono);background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:0 4px}
+.pill.o{background:var(--book2);color:#fff}
+.empty{margin:0;color:var(--muted);font-size:.85rem}
+.lg{margin:8px 0 0;color:var(--muted);font-size:.72rem}
+@media (prefers-reduced-motion:no-preference){.new{animation:pop .6s ease-out}@keyframes pop{0%{transform:scale(.92);opacity:0;box-shadow:0 0 0 3px var(--accent)}60%{opacity:1}100%{transform:none;box-shadow:none}}.card{animation:in .25s ease-out}@keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+.termwrap{display:flex;flex-direction:column;min-width:0;height:min(70dvh,560px);min-height:360px;border-radius:8px;overflow:hidden;background:var(--term-bg);border:1px solid var(--term-line)}
+.tbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--term-line);color:var(--term-dim);font:600 .78rem var(--f-mono)}
+.tbar .tb{display:flex;gap:6px}
+.tbar button{background:transparent;border:1px solid var(--term-line);color:var(--term-dim);border-radius:4px;padding:2px 8px;font:inherit}
+.tbar button:hover{color:var(--term-fg)}
+#out{flex:1;overflow-y:auto;padding:12px;font:.86rem/1.5 var(--f-mono);color:var(--term-fg);min-height:0}
+#out div{white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.5em}
+.p{color:var(--term-prompt)}
+.o{}.e{color:var(--term-red)}.g{color:var(--term-green)}.r{color:var(--term-red)}.y{color:var(--term-yellow)}.n{color:var(--term-cyan)}.c{color:var(--term-cyan)}.d{color:var(--term-blue);font-weight:600}.dim{color:var(--term-dim)}
+.inl{display:flex;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--term-line);font:.86rem var(--f-mono)}
+.inl .p{white-space:nowrap;max-width:55%;overflow:hidden;text-overflow:ellipsis}
+#cmd{flex:1;min-width:0;background:transparent;border:0;color:var(--term-fg);font:inherit;padding:4px 0;caret-color:var(--term-prompt)}
+#cmd:focus-visible{outline:none}
+.inl:focus-within{box-shadow:inset 0 0 0 1px var(--term-prompt)}
+@media (max-width:560px){.card{padding:14px}}
+.rg{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.sync{font-size:.75rem;color:var(--muted)}
+.sync[data-s=cloud]{color:var(--ok)}
+.sync[data-s=noaccess],.sync[data-s=error]{color:var(--err)}
+.who{font-size:.8rem;font-weight:600;overflow-wrap:anywhere;text-align:right}
+.fli{list-style:none}
+button.fc{width:100%;text-align:left;cursor:pointer;color:inherit}
+button.fc:hover,button.fc.on{border-color:var(--accent)}
+.viewer{margin-top:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);min-width:0}
+.vh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);font:600 .8rem var(--f-mono)}
+.vh button{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:1px 8px;font-size:.78rem}
+.viewer pre{margin:0;padding:8px;max-height:220px;overflow:auto;font:.78rem/1.5 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>La máquina del tiempo averiada</h1>
+      <p>Práctica 2 de Git · Nivel 1: Introducción a Git · Evolución del Software, Universidad de Cádiz</p>
+    </div>
+    <div class="rg"><div class="ring" id="ring"></div><div class="who" id="who"></div><div class="sync" id="sync" role="status"></div></div>
+  </header>
+  <nav class="phases" id="phases" role="tablist" aria-label="Fases"></nav>
+  <main class="grid">
+    <section class="left" id="panel" aria-live="polite"></section>
+    <div class="right">
+      <section class="scene" id="scene" aria-label="Escena: lo que ocurre en tus repositorios"></section>
+      <section class="termwrap" aria-label="Terminal">
+        <div class="tbar"><span>agente@agencia — terminal de campo</span><span class="tb"><button id="bClear" type="button">Limpiar</button><button id="bReset" type="button" title="Vacía los archivos y repositorios del terminal. No borra tu nota ni tu progreso.">Reiniciar entorno</button></span></div>
+        <div id="out" role="log" aria-live="off"></div>
+        <label class="inl" for="cmd"><span class="p" id="pr"></span><input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Escribe un comando"></label>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+/*SIM-START*/
+const HOME='/home/agente';
+// El profesorado puede cambiar la URL que ven los alumnos. El simulador acepta cualquier URL que termine en laboratorio-chrono(.git).
+const REPO_URL='https://github.com/evolucion-software-uca/laboratorio-chrono.git';
+const CLUES={1:'GIT',2:'CHECKOUT',3:'14-AGOSTO'};
+const CHRONO=[
+ ['He descubierto 5 anomalías en el sistema','Wed Aug 12 22:41:09 2026 +0200'],
+ ['Se han detectado 2 intentos de ataque al laboratorio','Thu Aug 13 02:10:44 2026 +0200'],
+ ['Han desaparecido 8 archivos del servidor','Thu Aug 13 09:57:31 2026 +0200'],
+ ['He localizado 1 puerta trasera en la red','Thu Aug 13 23:48:20 2026 +0200'],
+ ['Quedan 4 horas para que la máquina se bloquee','Fri Aug 14 03:17:00 2026 +0200']];
+const WEEK_FILES={"diario_semana1.txt": "LABORATORIO CHRONO - DIARIO PERSONAL\nSemana 1\n\nHoy he empezado a experimentar con ¡GIT!.\n\nAl principio me pareció una simple herramienta para guardar versiones de\nunos archivos. Una especie de cuaderno que no se pierde. Pero cuanto más\nla uso, más me doy cuenta de lo que realmente es: una herramienta\npoderosísima.\n\nCada commit es una fotografía exacta de mi trabajo en un instante concreto.\nNo es una copia aproximada ni un recuerdo borroso: es el momento tal cual\nera, con todo lo que contenía. Y esas fotografías se quedan ahí,\nordenadas una detrás de otra, para siempre.\n\nLlevo toda la vida estudiando el tiempo. Y resulta que alguien ya\nconstruyó una máquina que lo guarda en instantáneas, y se llama Git.\n\nMañana seguiré leyendo la documentación. Tengo la sensación de que esto\npuede cambiarlo todo.\n", "diario_semana2.txt": "LABORATORIO CHRONO - DIARIO PERSONAL\nSemana 2\n\nHe pasado la noche leyendo sobre los comandos de Git. Casi todos son\ninofensivos: status mira, log lee, add prepara. Ninguno toca nada\nimportante.\n\nPero hay uno que aparece en todos los foros con la misma advertencia:\n¡CHECKOUT!.\n\n\"Cuidado con checkout.\" \"No lo uses si no sabes lo que haces.\"\n\"Puede dejarte en un estado muy raro.\"\n\nLo he leído una y otra vez. Y cuanto más me advierten, más me interesa.\n\nPorque checkout permite situarse en cualquier instantánea del pasado.\nNo solo mirarla: colocarse dentro de ella. Si cada commit es un momento\nguardado, este comando es la forma de regresar a él.\n\nSé que es peligroso. Lo sé. Pero tengo que examinarlo con calma, probarlo\nen pequeño y entender exactamente qué hace antes de dar ningún paso\nmás. Un comando así no se ejecuta a ciegas.\n\nEsta noche empiezo a estudiarlo.\n", "diario_semana3.txt": "LABORATORIO CHRONO - DIARIO PERSONAL\nSemana 3\n\nYa sé lo que voy a hacer.\n\nLlevo semanas dándole vueltas, y esta noche por fin lo he visto claro.\nTodo lo que he estado estudiando, la máquina, las instantáneas,\nel comando checkout, ha sido para esto.\n\nVoy a volver al pasado. A un momento concreto, que he guardado con mucho\ncuidado, y que es el único lugar en el mundo donde quiero estar.\n\nVoy a estar con mi hija.\n\nSé que no debería. Sé lo que dicen las advertencias. Sé que ese comando\npuede dejarme atrapada en un punto del historial sin camino de vuelta.\nPero ahí, en esa fotografía, ella todavía está. Y yo llevo demasiado\ntiempo sin poder abrazarla.\n\nLo haré al día ¡14-AGOSTO!, a las 3:17, el día en el que todo se detuvo. No voy a esperar\nmás.\n\nSi alguien lee esto: no me busquéis en el presente. Estaré donde el tiempo\nse quedó parado.\n"};
+const CHRONO_FILES=Object.assign({'README.md':'# Laboratorio Chrono\nDiario de investigación de la Dra. Chrono.\n'},WEEK_FILES);
+function fresh(){return{fs:{'/':{d:1},'/home':{d:1},[HOME]:{d:1}},repos:{},cwd:HOME,global:{},hist:[],f:{},lines:[],notified:{},view:0,q:{},hints:{},done:{},rev:0,email:'',code:false}}
+let S=fresh();
+function cyrb53(s,seed){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)}
+function hex40(s){let r='';for(let i=0;r.length<40;i++)r+=cyrb53(s,i).toString(16).padStart(14,'0');return r.slice(0,40)}
+function gitDate(d){const D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],p=n=>String(n).padStart(2,'0');const o=-d.getTimezoneOffset(),a=Math.abs(o);return `${D[d.getDay()]} ${M[d.getMonth()]} ${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ${d.getFullYear()} ${o<0?'-':'+'}${p(Math.floor(a/60))}${p(a%60)}`}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const out=(t,c='o')=>S.lines.push({t:String(t),c});
+const outH=h=>S.lines.push({h});
+const par=p=>p.slice(0,p.lastIndexOf('/'))||'/';
+const bn=p=>p.slice(p.lastIndexOf('/')+1);
+const join=(d,n)=>(d==='/'?'':d)+'/'+n;
+const isDir=p=>!!(S.fs[p]&&S.fs[p].d);
+const children=d=>Object.keys(S.fs).filter(k=>k!==d&&par(k)===d);
+function resolve(p){if(p==='~'||p.startsWith('~/'))p=HOME+p.slice(1);const parts=(p.startsWith('/')?p:S.cwd+'/'+p).split('/'),st=[];for(const x of parts){if(!x||x==='.')continue;if(x==='..')st.pop();else st.push(x)}return '/'+st.join('/')}
+const prompt=()=>'agente@agencia:'+(S.cwd===HOME?'~':S.cwd.startsWith(HOME+'/')?'~'+S.cwd.slice(HOME.length):S.cwd)+'$';
+function findRepo(p){for(;;){if(S.repos[p])return p;if(p==='/')return null;p=par(p)}}
+const repoByName=n=>{const k=Object.keys(S.repos).find(k=>bn(k)===n);return k?{root:k,r:S.repos[k]}:null};
+function tok(s){const r=[];let cur='',q=null,has=false;const push=()=>{if(cur||has){r.push(cur);cur='';has=false}};for(const ch of s){if(q){if(ch===q)q=null;else cur+=ch}else if(ch==='"'||ch==="'"){q=ch;has=true}else if(/\s/.test(ch))push();else if(ch==='>'){const prevEmpty=!cur&&!has;push();if(prevEmpty&&r[r.length-1]==='>')r[r.length-1]='>>';else r.push('>')}else cur+=ch}if(q)return null;push();return r}
+function scan(root){const nested=Object.keys(S.repos).filter(k=>k!==root&&k.startsWith(root+'/'));const work={};for(const k in S.fs){if(!k.startsWith(root+'/')||S.fs[k].d)continue;if(nested.some(n=>k.startsWith(n+'/')))continue;work[k.slice(root.length+1)]=S.fs[k].c}return{work,nested:nested.map(n=>n.slice(root.length+1))}}
+const head=r=>r.commits.length?r.commits[r.commits.length-1].files:{};
+function info(root){const r=S.repos[root],{work,nested}=scan(root),h=head(r),staged=[],unstaged=[],un=new Set();
+ for(const k in r.index){if(!(k in h))staged.push(['new file',k]);else if(r.index[k]!==h[k])staged.push(['modified',k]);
+  if(!(k in work))unstaged.push(['deleted',k]);else if(work[k]!==r.index[k])unstaged.push(['modified',k])}
+ for(const k in work)if(!(k in r.index))un.add(k.includes('/')?k.split('/')[0]+'/':k);
+ nested.forEach(n=>un.add(n+'/'));
+ const untracked=[...un].sort();staged.sort((a,b)=>a[1]<b[1]?-1:1);
+ return{r,work,staged,unstaged,untracked,clean:!staged.length&&!unstaged.length&&!untracked.length}}
+function statusLines(root,commitMode){const i=info(root),L=[],r=i.r;
+ L.push(['On branch main']);if(r.remote&&r.commits.length-1===r.originIdx)L.push(["Your branch is up to date with 'origin/main'."]);L.push(['']);
+ if(!r.commits.length){L.push([commitMode?'Initial commit':'No commits yet']);L.push([''])}
+ if(i.staged.length){L.push(['Changes to be committed:']);L.push([r.commits.length?'  (use "git restore --staged <file>..." to unstage)':'  (use "git rm --cached <file>..." to unstage)']);i.staged.forEach(s=>L.push(['\t'+(s[0]+':').padEnd(12)+s[1],'g']));L.push([''])}
+ if(i.unstaged.length){L.push(['Changes not staged for commit:']);L.push(['  (use "git add <file>..." to update what will be committed)']);i.unstaged.forEach(s=>L.push(['\t'+(s[0]+':').padEnd(12)+s[1],'r']));L.push([''])}
+ if(i.untracked.length){L.push(['Untracked files:']);L.push(['  (use "git add <file>..." to include in what will be committed)']);i.untracked.forEach(s=>L.push(['\t'+s,'r']));L.push([''])}
+ if(i.staged.length){L.pop()}
+ else if(i.unstaged.length)L.push(['no changes added to commit (use "git add" and/or "git commit -a")']);
+ else if(i.untracked.length)L.push(['nothing added to commit but untracked files present (use "git add" to track)']);
+ else L.push([r.commits.length?'nothing to commit, working tree clean':'nothing to commit (create/copy files and use "git add" to track)']);
+ if(L[L.length-1][0]===''&&L.length>1)L.pop();
+ return{L,i}}
+const lineCount=s=>s?s.split('\n').filter((x,k,a)=>k<a.length-1||x!=='').length:0;
+function makeChrono(dest){S.fs[dest]={d:1};S.fs[dest+'/.git']={d:1};for(const n in CHRONO_FILES)S.fs[dest+'/'+n]={c:CHRONO_FILES[n]};
+ const commits=[];let prev='';CHRONO.forEach(([msg,date])=>{const h=hex40('chrono|'+prev+msg);prev=h;commits.push({h,msg,author:'Dra. Chrono <chrono@laboratorio.example>',date,files:{...CHRONO_FILES},changed:1})});
+ S.repos[dest]={commits,index:{...CHRONO_FILES},cfg:{},remote:true,originIdx:commits.length-1}}
+const wk=n=>{const d=repoByName('diario-del-agente');if(!d)return false;return d.r.commits.some((c,i)=>{const m=/^Informe semana (\d+) - PALABRA CLAVE: (.+)$/i.exec(c.msg.trim());const f='diario_semana'+n+'.txt';return m&&+m[1]===n&&m[2].trim().toUpperCase()===CLUES[n]&&c.changed===1&&f in c.files&&c.files[f].toUpperCase().includes(CLUES[n])&&(i===0||!(f in d.r.commits[i-1].files))})};
+const allWk=()=>wk(1)&&wk(2)&&wk(3);
+const nCommits=name=>{const x=repoByName(name);return x?x.r.commits.length:0};
+const help=()=>{['Terminal: pwd, ls [-a], cd, mkdir, touch, cat, cp, rm [-r], clear','Escribir en un archivo: echo "texto" > archivo   (>> para añadir)','Git: init, status, clone, config, add, commit, log','Tab autocompleta y las flechas ↑ ↓ recuperan comandos anteriores.'].forEach(l=>out(l,'n'))};
+const need=()=>{const r=findRepo(S.cwd);if(!r)out('fatal: not a git repository (or any of the parent directories): .git','e');return r};
+const CMDS={
+ help,
+ clear(){S.lines=[]},
+ pwd(){out(S.cwd)},
+ cd(a){const t=a[0]?resolve(a[0]):HOME;if(!isDir(t)){out(`bash: cd: ${a[0]}: No existe el archivo o el directorio`,'e');return}S.cwd=t;
+  if(t===HOME+'/diario-del-agente'){S.f.cdDiario=1;if(repoByName('laboratorio-chrono'))S.f.backDiario=1}
+  if(bn(t)==='laboratorio-chrono'&&S.repos[t])S.f.cdChrono=1},
+ mkdir(a){const p=a.includes('-p');a=a.filter(x=>!x.startsWith('-'));if(!a.length){out('mkdir: falta un operando','e');return}
+  for(const n of a){const t=resolve(n);if(S.fs[t]){if(!p)out(`mkdir: no se puede crear el directorio «${n}»: El archivo ya existe`,'e');continue}
+   if(!isDir(par(t))){if(p){let q=par(t);const st=[];while(!S.fs[q]){st.push(q);q=par(q)}st.forEach(x=>S.fs[x]={d:1})}else{out(`mkdir: no se puede crear el directorio «${n}»: No existe el archivo o el directorio`,'e');continue}}
+   S.fs[t]={d:1}}},
+ touch(a){if(!a.length){out('touch: falta un operando archivo','e');return}for(const n of a){const t=resolve(n);if(isDir(t))continue;if(!isDir(par(t))){out(`touch: no se puede hacer touch a «${n}»: No existe el archivo o el directorio`,'e');continue}if(!S.fs[t])S.fs[t]={c:''}}},
+ cat(a){if(!a.length){out('cat: falta un archivo','e');return}for(const n of a){const t=resolve(n);if(!S.fs[t])out(`cat: ${n}: No existe el archivo o el directorio`,'e');else if(S.fs[t].d)out(`cat: ${n}: Es un directorio`,'e');else S.fs[t].c.split('\n').forEach((l,i,x)=>{if(i<x.length-1||l!=='')out(l)})}},
+ cp(a){const args=a.filter(x=>!x.startsWith('-'));if(args.length<2){out('cp: falta el archivo de destino','e');return}
+  const src=resolve(args[0]);if(!S.fs[src]){out(`cp: no se puede obtener información de «${args[0]}»: No existe el archivo o el directorio`,'e');return}
+  if(S.fs[src].d){out(`cp: se omite el directorio «${args[0]}»`,'e');return}
+  let d=resolve(args[1]);if(isDir(d))d=join(d,bn(src));if(!isDir(par(d))){out(`cp: no se puede crear el fichero «${args[1]}»: No existe el archivo o el directorio`,'e');return}
+  S.fs[d]={c:S.fs[src].c}},
+ echo(a){const k=a.findIndex(x=>x==='>'||x==='>>');if(k<0){out(a.join(' '));return}const f=a[k+1];if(!f){out('bash: error de sintaxis cerca del elemento inesperado «newline»','e');return}const t=resolve(f),txt=a.slice(0,k).join(' ')+'\n';
+  if(isDir(t)){out(`bash: ${f}: Es un directorio`,'e');return}if(!isDir(par(t))){out(`bash: ${f}: No existe el archivo o el directorio`,'e');return}
+  S.fs[t]={c:(a[k]==='>>'&&S.fs[t]?S.fs[t].c:'')+txt}},
+ rm(a){const rec=a.some(x=>/^-[a-z]*[rR]/.test(x)),args=a.filter(x=>!x.startsWith('-'));if(!args.length){out('rm: falta un operando','e');return}
+  for(const n of args){const t=resolve(n);if(!S.fs[t]){out(`rm: no se puede borrar «${n}»: No existe el archivo o el directorio`,'e');continue}
+   if(S.fs[t].d&&!rec){out(`rm: no se puede borrar «${n}»: Es un directorio (usa rm -r)`,'e');continue}
+   if(t===HOME||t==='/'||t==='/home'||S.cwd===t||S.cwd.startsWith(t+'/')){out(`rm: no se puede borrar «${n}»: estás dentro de esa carpeta`,'e');continue}
+   for(const k of Object.keys(S.fs))if(k===t||k.startsWith(t+'/'))delete S.fs[k]}
+  for(const r of Object.keys(S.repos))if(!S.fs[r+'/.git'])delete S.repos[r]},
+ ls(a){const all=a.some(x=>/^-[a-zA-Z]*a/.test(x)),args=a.filter(x=>!x.startsWith('-')),t=args[0]?resolve(args[0]):S.cwd;
+  if(!S.fs[t]){out(`ls: no se puede acceder a '${args[0]}': No existe el archivo o el directorio`,'e');return}
+  if(!isDir(t)){out(bn(t));return}
+  let names=children(t).map(bn);if(!all)names=names.filter(n=>!n.startsWith('.'));else names=['.','..',...names];
+  names.sort((x,y)=>x.localeCompare(y));
+  const root=findRepo(S.cwd);if(t===S.cwd&&root===S.cwd){if(all&&bn(root)==='diario-del-agente')S.f.lsaDiario=1;if(bn(root)==='laboratorio-chrono')S.f.lsChrono=1}
+  if(names.length)outH(names.map(n=>{const d=n==='.'||n==='..'||isDir(join(t,n));return d?`<span class="d">${esc(n)}</span>`:esc(n)}).join('  '))},
+ git(a){const sub=a[0];if(!sub){out('uso: git <comando> [<argumentos>]','n');return}
+  const fn=GIT[sub];if(fn)return fn(a.slice(1));
+  if(['branch','checkout','switch','merge','reset','restore','push','pull','fetch','rebase','tag','cherry-pick','diff','show','stash','remote'].includes(sub))out(`git ${sub}: este comando se estudia en niveles posteriores y no está activo en el Nivel 1.`,'n');
+  else out(`git: '${sub}' no es un comando de git. Escribe help para ver los disponibles.`,'e')}
+};
+const GIT={
+ init(){const t=S.cwd,had=!!S.repos[t];if(!had){S.fs[t+'/.git']={d:1};S.repos[t]={commits:[],index:{},cfg:{},remote:false}}out(`${had?'Reinitialized existing':'Initialized empty'} Git repository in ${t}/.git/`);if(!had)out("hint: la rama inicial se llama 'main'",'dim')},
+ status(){const root=need();if(!root)return;const{L}=statusLines(root,false);L.forEach(([t,c])=>out(t,c||'o'));
+  const b=bn(root),i=info(root);if(b==='diario-del-agente'){S.f.statusDiario=1;if(allWk()&&i.clean)S.f.finalStatus=1}if(b==='laboratorio-chrono')S.f.statusChrono=1},
+ clone(a){const args=a.filter(x=>!x.startsWith('-'));if(!args.length){out('fatal: You must specify a repository to clone.','e');return}
+  const url=args[0],name=bn(url.replace(/\/+$/,'')).replace(/\.git$/,''),dest=resolve(args[1]||name);
+  if(name!=='laboratorio-chrono'){out(`Cloning into '${bn(dest)}'...`);out(`fatal: repository '${url}' not found`,'e');return}
+  if(S.fs[dest]&&children(dest).length){out(`fatal: destination path '${bn(dest)}' already exists and is not an empty directory.`,'e');return}
+  out(`Cloning into '${bn(dest)}'...`);['remote: Enumerating objects: 15, done.','remote: Counting objects: 100% (15/15), done.','Receiving objects: 100% (15/15), 4.62 KiB | 4.62 MiB/s, done.'].forEach(l=>out(l));
+  if(findRepo(par(dest)))out('Aviso de la Agencia: has clonado dentro de otro repositorio. Lo habitual es salir antes con cd ..; si algo se complica, borra la carpeta con rm -r.','n');
+  makeChrono(dest);S.f.cloned=1},
+ config(a){const g=a.includes('--global'),args=a.filter(x=>!x.startsWith('--'));
+  if(a.includes('--list')||a.includes('-l')){const root=findRepo(S.cwd);const m={...S.global,...(root?S.repos[root].cfg:{})};Object.keys(m).forEach(k=>out(`${k}=${m[k]}`));return}
+  if(!args.length){out('uso: git config [--global] <clave> [<valor>]','n');return}
+  const k=args[0];if(args.length===1){const root=findRepo(S.cwd);const v=(root&&S.repos[root].cfg[k])||S.global[k];if(v!==undefined)out(v);return}
+  if(g){S.global[k]=args[1];return}const root=need();if(!root)return;S.repos[root].cfg[k]=args[1]},
+ add(a){const root=need();if(!root)return;const r=S.repos[root],args=a.filter(x=>!x.startsWith('-')||x==='-A');
+  if(!args.length){out('Nothing specified, nothing added.','e');out("hint: ¿Querías decir 'git add .'?",'dim');return}
+  const{work}=scan(root);
+  for(const n of args){if(n==='.'||n==='-A'){const pre=n==='-A'||S.cwd===root?'':S.cwd.slice(root.length+1)+'/';for(const k in work)if(k.startsWith(pre))r.index[k]=work[k];for(const k in r.index)if(!(k in work)&&k.startsWith(pre))delete r.index[k];continue}
+   const t=resolve(n);if(!t.startsWith(root+'/')){out(`fatal: ${n}: fuera del repositorio`,'e');continue}const rel=t.slice(root.length+1);
+   if(rel in work)r.index[rel]=work[rel];
+   else if(isDir(t)){const ks=Object.keys(work).filter(k=>k.startsWith(rel+'/'));if(!ks.length)out(`fatal: pathspec '${n}' did not match any files`,'e');ks.forEach(k=>r.index[k]=work[k])}
+   else if(rel in r.index)delete r.index[rel];
+   else out(`fatal: pathspec '${n}' did not match any files`,'e')}},
+ commit(a){const root=need();if(!root)return;const r=S.repos[root];let msg=null,all=false,empty=false;
+  for(let i=0;i<a.length;i++){const x=a[i];if(x==='-m'||x==='-am'||x==='-ma'){if(x!=='-m')all=true;if(i+1>=a.length){out("error: switch `m' requires a value",'e');return}msg=a[++i]}else if(x==='-a')all=true;else if(x==='--allow-empty')empty=true;else if(x.startsWith('-m')&&x.length>2)msg=x.slice(2);else{out(`error: argumento no reconocido: ${x}`,'e');return}}
+  if(msg===null){out('Aborting commit: en este simulador usa git commit -m "mensaje".','e');return}
+  if(all){const{work}=scan(root);for(const k in r.index){if(k in work)r.index[k]=work[k];else delete r.index[k]}}
+  const i=info(root);
+  if(!i.staged.length&&!empty){const{L}=statusLines(root,true);L.forEach(([t,c])=>out(t,c||'o'));if(i.untracked.length&&bn(root)==='diario-del-agente')S.f.commitNoAdd=1;return}
+  const name=r.cfg['user.name']||S.global['user.name'],mail=r.cfg['user.email']||S.global['user.email'];
+  if(!name||!mail){out('Author identity unknown','e');out('');out('*** Please tell me who you are.','e');out('');out('Run','dim');out('  git config user.email "tu@correo.com"','dim');out('  git config user.name "Tu nombre"','dim');out('');out('fatal: unable to auto-detect email address','e');return}
+  if(!msg.trim()){out('Aborting commit due to empty commit message.','e');return}
+  const first=!r.commits.length,prev=r.commits.length?r.commits[r.commits.length-1].h:'';
+  const c={h:hex40(prev+'|'+msg+'|'+Date.now()+'|'+r.commits.length),msg,author:`${name} <${mail}>`,date:gitDate(new Date()),files:{...r.index},changed:i.staged.length};
+  r.commits.push(c);
+  out(`[main ${first?'(root-commit) ':''}${c.h.slice(0,7)}] ${msg}`);
+  const ins=i.staged.reduce((s,[,k])=>s+lineCount(r.index[k]),0),n=i.staged.length;
+  out(` ${n} file${n===1?'':'s'} changed, ${ins} insertion${ins===1?'':'s'}(+)`);
+  i.staged.forEach(([t,k])=>{if(t==='new file')out(` create mode 100644 ${k}`)})},
+ log(a){const root=need();if(!root)return;const r=S.repos[root];
+  if(!r.commits.length){out("fatal: your current branch 'main' does not have any commits yet",'e');return}
+  let one=false,n=Infinity,lim1=false;for(let i=0;i<a.length;i++){const x=a[i];if(x==='--oneline')one=true;else if(/^-\d+$/.test(x)){n=+x.slice(1);lim1=n===1}else if(x==='-n'){n=+a[++i]}else if(/^-n\d+$/.test(x))n=+x.slice(2);else{out(`fatal: opción no soportada en el simulador: ${x}`,'e');return}}
+  if(!(n>0))n=Infinity;
+  const dec=i=>{const p=[];if(i===r.commits.length-1)p.push('HEAD -> main');if(r.remote&&i===r.originIdx)p.push('origin/main','origin/HEAD');return p.length?` (${p.join(', ')})`:''};
+  r.commits.map((c,i)=>({c,i})).reverse().slice(0,n).forEach(({c,i})=>{
+   if(one)outH(`<span class="y">${c.h.slice(0,7)}</span><span class="c">${esc(dec(i))}</span> ${esc(c.msg)}`);
+   else{outH(`<span class="y">commit ${c.h}</span><span class="c">${esc(dec(i))}</span>`);out('Author: '+c.author);out('Date:   '+c.date);out('');out('    '+c.msg);out('')}});
+  const b=bn(root),cnt=r.commits.length;
+  if(b==='laboratorio-chrono'){S.f.logChrono=1;if(one)S.f.onelineChrono=1}
+  if(b==='diario-del-agente'){if(one&&cnt>=3)S.f.onelineDiario=1;if(lim1&&cnt>=4)S.f.log1Final=1;if(allWk())S.f.finalLog=1}},
+ checkout(a){const root=findRepo(S.cwd),t=(a[0]||'').toLowerCase();
+  if(t==='14-agosto'&&root&&bn(root)==='diario-del-agente'){
+   if(!allWk()){out("error: pathspec '14-agosto' did not match any file(s) known to git",'e');out('Pista de la Agencia: aún no tienes las tres claves registradas en tu diario.','n');return}
+   S.f.final=1;['La terminal vibra. Las agujas del reloj del laboratorio giran hacia atrás.','Fecha de destino: 14 de agosto, 3:17, el día en que todo se detuvo.','Entre el humo de la máquina distingues una silueta que te hace señas.','— «Sabía que tus commits te traerían hasta aquí, agente. Ayúdame a salir.»','','Misión cumplida. En el Nivel 2 aprenderás a moverte por las líneas temporales.'].forEach(l=>out(l,'n'));return}
+  out('git checkout: este comando se estudia en el Nivel 2. Aquí solo hace falta el comando que revelan tus tres claves.','n')}
+};
+const QS=[
+ {p:1,id:'q1',q:'¿Qué mensaje indica que aún no hay commits?',o:['No commits yet','Repository empty','Clean working tree'],a:0,e:'Aparece «No commits yet», que significa que todavía no se ha guardado ninguna instantánea.'},
+ {p:1,id:'q2',q:'¿Qué contiene el directorio .git y por qué no debe modificarse manualmente?',o:['Almacena los ejecutables del programa Git; no se toca a mano para evitar desinstalar la herramienta.','Guarda el historial y la configuración del repositorio; no se toca a mano porque se podría estropear o perder todo el historial.','Almacena una copia de seguridad temporal que se borra automáticamente al cerrar la terminal.'],a:1,e:'Guarda el historial y la configuración. Si se estropea o se borra, se pierde el historial.'},
+ {p:2,id:'q3',q:'¿Qué se copia con git clone además de los archivos?',o:['Únicamente la rama principal (main) en su último commit.','Los archivos temporales de compilación y la memoria caché del proyecto.','Todo el repositorio: el historial completo de commits, las ramas y la conexión con el servidor original (origin).'],a:2,e:'Se copia el repositorio completo: historial, ramas y la conexión con el original.'},
+ {p:2,id:'q4',q:'¿Por qué git status sale limpio justo después de clonar?',o:['Porque los archivos son idénticos al último commit, así que no hay cambios pendientes.','Porque git clone borra el staging area para obligar a volver a registrar los archivos.','Porque los archivos clonados permanecen ocultos hasta ejecutar el primer git add.'],a:0,e:'Los archivos coinciden con el último commit, así que no hay cambios pendientes.'},
+ {p:2,id:'q5',q:'¿Qué diferencia de información hay entre las dos variantes de git log (git log vs git log --oneline)?',o:['git log muestra los commits locales, mientras que --oneline incluye los del servidor remoto.','git log muestra hash, autor, fecha y mensaje completos; --oneline solo muestra el hash abreviado y la primera línea del mensaje.','git log muestra el código modificado línea por línea; --oneline solo muestra el nombre del autor.'],a:1,e:'git log da el detalle completo de cada commit; --oneline lo resume en una línea.'},
+ {p:3,id:'q6',q:'¿Qué diferencia hay entre un archivo untracked y uno staged?',o:['Untracked: está guardado en el remoto; Staged: está guardado solo en la máquina local.','Untracked: Git aún no conoce el archivo; Staged: ya está añadido con git add y listo para el commit.','Untracked: es un archivo corregido; Staged: contiene errores detectados por Git.'],a:1,e:'Untracked: Git aún no lo sigue. Staged: ya está en el área de preparación.'},
+ {p:3,id:'q7',q:'¿Por qué falla el commit sin add?',o:['Porque commit solo guarda lo que está preparado, y sin add no hay nada preparado.','Porque Git requiere permisos de red antes de generar la clave del commit.','Porque el comando git commit exige indicar la dirección del servidor remoto.'],a:0,e:'commit solo guarda lo que está en el área de preparación.'},
+ {p:3,id:'q8',q:'¿Qué ventaja tiene hacer un commit por hallazgo en lugar de uno único?',o:['Ocupa menos espacio en el disco duro de la máquina local.','El historial queda más claro, es más fácil de leer y se puede revisar o deshacer cada cambio por separado.','Permite enviar las modificaciones a GitHub sin necesidad de credenciales.'],a:1,e:'Un historial con commits pequeños es más fácil de leer y de revisar.'},
+ {p:4,id:'q9',q:'¿Qué información aporta git log además del mensaje del commit?',o:['Aporta el hash, el autor y la fecha de cada commit.','Aporta la dirección IP del desarrollador y el sistema operativo utilizado.','Aporta la velocidad de transferencia y el tamaño en megabytes del proyecto.'],a:0,e:'Aporta el hash, el autor y la fecha de cada commit.'},
+ {p:4,id:'q10',q:'¿Por qué es importante escribir mensajes de commit descriptivos?',o:['Porque Git rechaza los commits cuyo mensaje tenga menos de 20 caracteres.','Porque el historial es la documentación del proyecto, y mensajes claros permiten entender qué cambió y por qué sin revisar todo el código.','Porque los mensajes descriptivos se convierten automáticamente en comentarios dentro del código fuente.'],a:1,e:'El historial es la documentación del proyecto.'},
+ {p:4,id:'q11',q:'¿En qué orden muestra git log los commits y cómo afecta eso a la lectura?',o:['En orden alfabético según el texto del mensaje, por lo que hay que buscar por palabras clave.','Del más antiguo al más reciente, leyéndose de arriba a abajo en orden lineal.','Del más reciente al más antiguo, así que hay que leerlo de abajo arriba para seguir el orden cronológico.'],a:2,e:'Del más reciente al más antiguo: para el orden cronológico se lee de abajo arriba.'}
+];
+const clueTable = (n) => `<div class="tw"><table><thead><tr><th>Archivo</th><th>Palabra clave</th></tr></thead><tbody><tr><td class="mono">diario_semana${n}.txt</td><td class="mono">${CLUES[n]}</td></tr></tbody></table></div>`;const STEPS=[
+ {p:1,id:'1a',t:'Coge tu cuaderno: crea un directorio llamado <code>diario-del-agente</code> y accede a él.',h:'<code>mkdir diario-del-agente\ncd diario-del-agente</code>',d:()=>isDir(HOME+'/diario-del-agente')&&!!S.f.cdDiario},
+ {p:1,id:'1b',t:'Prepáralo para el caso: inicializa un repositorio Git en ese directorio.',h:'<code>git init</code>',d:()=>!!repoByName('diario-del-agente')},
+ {p:1,id:'1c',t:'Analiza el estado del diario del agente.',h:'<code>git status</code>',d:()=>!!S.f.statusDiario},
+ {p:1,id:'1d',t:'Comprueba que lo has preparado bien: lista también los archivos ocultos y busca <code>.git</code>.',h:'<code>ls -a</code>',d:()=>!!S.f.lsaDiario},
+ {p:2,id:'2a',t:'Clona el diario de la Dra. Chrono (repositorio <code>laboratorio-chrono</code>) con la URL de abajo. Antes, sal de tu diario con <code>cd ..</code> para no meter un repositorio dentro de otro.',x:'url',h:'<code>cd ..\ngit clone &lt;url&gt;</code>',d:()=>!!repoByName('laboratorio-chrono')},
+ {p:2,id:'2b',t:'Accede al diario clonado y lista su contenido.',h:'<code>cd laboratorio-chrono\nls</code>',d:()=>!!S.f.cdChrono&&!!S.f.lsChrono},
+ {p:2,id:'2c',t:'Comprueba el estado del diario y piensa por qué indica que no hay cambios pendientes.',h:'<code>git status</code>',d:()=>!!S.f.statusChrono},
+ {p:2,id:'2d',t:'Consulta el historial de la Dra. Chrono con las dos variantes de <code>git log</code> (completa y de una línea por commit).',h:'<code>git log\ngit log --oneline</code>',d:()=>!!S.f.logChrono&&!!S.f.onelineChrono},
+ {p:2,id:'2e',t:'Lee los mensajes de los commits en orden cronológico y extrae el código secreto de 5 cifras. Cada commit esconde una cifra.',x:'code',h:'<p>Cada mensaje contiene un número. El orden en que los juntes importa.</p>',d:()=>!!S.code},
+ {p:3,id:'3a',t:'Vuelve a tu diario (repositorio local).',h:'<code>cd ~/diario-del-agente</code>',d:()=>!!S.f.backDiario&&findRepo(S.cwd)===HOME+'/diario-del-agente'},
+ {p:3,id:'3b',t:'Configura tu identidad local (nombre y correo) si aún no está definida.',h:'<code>git config user.name "Tu nombre"\ngit config user.email "tu@correo.com"</code>',d:()=>{const d=repoByName('diario-del-agente');return!!d&&!!((d.r.cfg['user.name']||S.global['user.name'])&&(d.r.cfg['user.email']||S.global['user.email']))}},
+{p:3,id:'3c',t:'<b>Semana 1.</b> Lee <code>diario_semana1.txt</code> en el diario de la doctora (usando cat o pulsando el archivo en la escena) para averiguar la palabra clave. (Fijate muy bien que palabra... ¡DESTACA!)<br><br>Después:<ol style="margin-top:8px; padding-left:24px; display:flex; flex-direction:column; gap:4px;"><li>crea <code>diario_semana1.txt</code> en tu diario con la pista. (copia el contenido)</li><li>comprueba el estado</li><li>prepáralo</li><li>vuelve a comprobar</li><li>confírmalo con el mensaje: <code>Informe semana 1 - PALABRA CLAVE: X</code>.</li></ol>',h:'<p>La palabra clave de esta semana:</p>'+clueTable(1)+'<code>cat ../laboratorio-chrono/diario_semana1.txt\ncp ../laboratorio-chrono/diario_semana1.txt .\ngit status\ngit add diario_semana1.txt\ngit status\ngit commit -m "Informe semana 1 - PALABRA CLAVE: GIT"</code>',d:()=>wk(1)},
+{p:3,id:'3d',t:'<b>Semana 2.</b> Antes del segundo ciclo: crea <code>diario_semana2.txt</code> e intenta ejecutar <code>git commit</code> sin haber hecho <code>add</code>. Lee el mensaje de Git y piensa por qué ocurre.',h:'<p>La palabra clave de esta semana:</p>'+clueTable(2)+'<code>cat ../laboratorio-chrono/diario_semana2.txt\ncp ../laboratorio-chrono/diario_semana2.txt .\ngit commit -m "Informe semana 2 - PALABRA CLAVE: CHECKOUT"</code>',d:()=>!!S.f.commitNoAdd}, {p:3,id:'3e',t:'<b>Semana 2.</b> Repite el ciclo con <code>diario_semana2.txt</code>: averigua la palabra clave en el diario de la doctora, comprueba el estado, prepáralo, vuelve a comprobar y confírmalo.',h:'<p>La palabra clave de esta semana:</p>'+clueTable(2)+'<code>cat ../laboratorio-chrono/diario_semana2.txt\ncp ../laboratorio-chrono/diario_semana2.txt .\ngit status\ngit add diario_semana2.txt\ngit status\ngit commit -m "Informe semana 2 - PALABRA CLAVE: CHECKOUT"</code>',d:()=>wk(2)},
+ {p:3,id:'3f',t:'<b>Semana 3.</b> Repite el ciclo con <code>diario_semana3.txt</code> y la tercera pista.',h:'<p>La palabra clave de esta semana:</p>'+clueTable(3)+'<code>cat ../laboratorio-chrono/diario_semana3.txt\ncp ../laboratorio-chrono/diario_semana3.txt .\ngit status\ngit add diario_semana3.txt\ngit status\ngit commit -m "Informe semana 3 - PALABRA CLAVE: 14-AGOSTO"</code>',d:()=>wk(3)},
+ {p:3,id:'3g',t:'Comprueba el estado (árbol de trabajo limpio) y el historial de tu diario.',h:'<code>git status\ngit log --oneline</code>',d:()=>!!S.f.finalStatus&&!!S.f.finalLog},
+ {p:4,id:'4a',t:'Lee el historial de tu diario en formato de una línea y fíjate en las tres palabras clave, en orden cronológico.',h:'<code>git log --oneline</code>',d:()=>!!S.f.onelineDiario},
+ {p:4,id:'4b',t:'Antes de partir, haz un último commit con un mensaje para los futuros agentes y comprueba con <code>git log -1</code> que queda registrado con tu identidad.',h:'<p>Crea un archivo, hazle add y commit. También puedes usar un commit vacío.</p><code>git commit --allow-empty -m "mensaje"\ngit log -1</code>',d:()=>nCommits('diario-del-agente')>=4&&!!S.f.log1Final},
+ {p:4,id:'4c',t:'Interpreta las tres claves como un comando de Git, escríbelo en la terminal y ve a salvar a la Dra. Chrono.',h:'<p>Las palabras, en orden, forman un comando de Git seguido de su argumento. Escríbelo en minúsculas.</p>',d:()=>!!S.f.final}
+];
+const STEP_W=6/STEPS.length,Q_W=4/QS.length;
+const fmt=n=>n.toFixed(2).replace('.',',');
+const isDone=s=>!!S.done[s.id];
+function latch(){STEPS.forEach(x=>{if(!S.done[x.id]&&x.d())S.done[x.id]=1})}
+const stepPts=s=>!isDone(s)?0:(S.hints[s.id]?.5:1)*STEP_W;
+const qOk=q=>!!(S.q[q.id]&&S.q[q.id].ok);
+const qDone=q=>!!(S.q[q.id]&&(S.q[q.id].done||S.q[q.id].ok));
+const score=()=>STEPS.reduce((t,s)=>t+stepPts(s),0)+QS.reduce((t,q)=>t+(qOk(q)?Q_W:0),0);
+const stepsDone=p=>STEPS.filter(s=>s.p===p).every(s=>isDone(s));
+const qsDone=p=>QS.filter(q=>q.p===p).every(qDone);
+const phaseDone=p=>stepsDone(p)&&qsDone(p);
+function notify(){latch();for(let p=1;p<=4;p++)if(!S.notified[p]&&phaseDone(p)){S.notified[p]=1;out(p<4?`✔ Fase ${p} completada. Pasa a la siguiente desde el panel de la izquierda.`:'✔ Fase 4 completada. Nivel 1 superado.','g')}}
+function run(line){S.lines.push({k:'cmd',p:prompt(),t:line});const raw=line.trim();if(!raw)return;S.hist.push(raw);if(S.hist.length>200)S.hist.shift();
+ const a=tok(raw);if(!a){out('bash: comillas sin cerrar','e');return}
+ const c=a[0],fn=CMDS[c];
+ try{if(fn)fn(a.slice(1));else out(`${c}: comando no encontrado. Escribe help para ver los disponibles.`,'e')}catch(e){out('Error interno del simulador: '+e.message,'e')}
+ notify();if(S.lines.length>400)S.lines=S.lines.slice(-300)}
+function complete(buf){const m=/^(.*?)(\S*)$/.exec(buf),hd=m[1],w=m[2],toks=hd.trim()?hd.trim().split(/\s+/):[];let c;
+ if(!toks.length)c=['pwd','ls','cd','mkdir','touch','cat','cp','echo','rm','clear','help','git'];
+ else if(toks[0]==='git'&&toks.length===1)c=['init','status','clone','config','add','commit','log'];
+ else{const i=w.lastIndexOf('/'),dp=i>=0?w.slice(0,i+1):'',dir=resolve(dp||'.');c=isDir(dir)?children(dir).map(bn).filter(n=>!n.startsWith('.')||w.slice(i+1).startsWith('.')).map(n=>dp+n+(isDir(join(dir,n))?'/':'')):[]}
+ const mt=c.filter(x=>x.startsWith(w)).sort();if(!mt.length)return{buf,opts:[]};
+ if(mt.length===1)return{buf:hd+mt[0]+(mt[0].endsWith('/')?'':' '),opts:[]};
+ let p=mt[0];for(const x of mt)while(!x.startsWith(p))p=p.slice(0,-1);return{buf:hd+p,opts:mt}}
+/*SIM-END*/
+
+const PH=[
+ {n:'El despertar',goal:'Prepara tu diario para el caso (crear un repositorio local).',story:'Son las 3:17 de la madrugada y aún no has podido pegar ojo. Debes encontrar a la Dra. Chrono. Te levantas, te pones lo primero que encuentras y sales pitando hacia su despacho. Allí hay una máquina cubierta de polvo, un ordenador encendido y una nota en la pantalla: «¡Lo conseguí!». Es el momento de ponerse manos a la obra: debes preparar tu diario de agente.',deliv:'Captura de la salida de <code>git status</code> y de <code>ls -a</code>.'},
+ {n:'Infiltración',goal:'Clonar el diario de la Dra. Chrono (repositorio remoto) y explorar su contenido e historial.',story:'Ya tienes tu diario preparado, pero está vacío. Investigas el viejo ordenador en busca de información y ves una carpeta: <code>laboratorio-chrono</code>. Aún guarda su diario con todo su historial. Debes hacer una copia exacta lo antes posible.',deliv:'Palabra clave obtenida y captura de <code>git log --oneline</code>.'},
+ {n:'Recolección de pruebas',goal:'Apuntar en tu diario todo lo que pueda ser útil (practicar el ciclo modificar, preparar y confirmar).',story:'La clave abre una puerta secreta del laboratorio donde la doctora dejó más pruebas: sus diarios personales de las semanas 1, 2 y 3, guardados en la copia que clonaste. La máquina se apaga y se vuelve a encender. La terminal advierte: «Solo recordarás lo que hayas escrito (con un commit). Lo que no registres, quedará en el olvido».',deliv:'Criterios de aceptación: tres commits con el formato correcto, un archivo por commit y <code>git status</code> mostrando el árbol de trabajo limpio.'},
+ {n:'El desenlace',goal:'Usar tus hallazgos para descubrir dónde está la Dra. Chrono (comando de análisis de Git).',story:'Has descubierto dónde está la Dra. Chrono y no puedes dejarla atrapada en el tiempo: debes ir a buscarla. La terminal se enciende por última vez: «La Dra. Chrono no se esfumó: se escondió dentro del tiempo. Cruza las claves y ve a salvarla. Introduce el comando necesario».',deliv:'Mensaje final interpretado y captura de <code>git log</code> del repositorio local.'}
+];
+const $=id=>document.getElementById(id);
+const ui={open:new Set(),codeMsg:null,copied:false,focus:null,keys:null,file:null,results:[]};
+const KEY='git-n1-v3';
+function save(){S.rev=(S.rev||0)+1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}cloudSave()}
+function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&j.fs&&j.repos)S=Object.assign(fresh(),j)}catch(e){}}
+const cloud={ref:null,state:'local',busy:false,dirty:false,t:null};
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms))]);
+const SYNC={local:'Progreso guardado solo en este navegador',cloud:'Progreso guardado en tu cuenta',staff:'Acceso de profesorado: tu actividad no entra en los resultados',connecting:'Conectando con tu cuenta…',noaccess:'Sin permiso para guardar en tu cuenta: pide acceso de colaborador',error:'No se pudo guardar en tu cuenta. Reintentando…'};
+function setSync(st){cloud.state=st;const el=$('sync');if(el){el.textContent=SYNC[st]||'';el.dataset.s=st}}
+function compact(){const c=Object.assign({},S);c.lines=S.lines.slice(-60);return c}
+async function cloudPush(){if(!cloud.ref)return;if(cloud.busy){cloud.dirty=true;return}cloud.busy=true;
+ try{do{cloud.dirty=false;await cloud.ref.set({s:JSON.stringify(compact()),rev:S.rev,email:S.email||auth.email||'',verified:!!auth.verified&&!S.email,phases:[1,2,3,4].filter(phaseDone).length,score:Math.round(score()*100)/100,items:STEPS.filter(isDone).length+QS.filter(qDone).length,total:STEPS.length+QS.length,updated:Date.now()})}while(cloud.dirty);setSync('cloud')}
+ catch(e){setSync(e&&e.code==='invalid_argument'?'noaccess':'error');if(!(e&&e.code==='invalid_argument'))setTimeout(cloudSave,8000)}
+ cloud.busy=false}
+function cloudSave(){if(!cloud.ref||auth.gate)return;clearTimeout(cloud.t);cloud.t=setTimeout(cloudPush,700)}
+const UNI_DOMAINS=['uca.es','alum.uca.es'];
+const okDomain=e=>UNI_DOMAINS.some(d=>String(e).toLowerCase().endsWith('@'+d));
+const auth={status:'checking',role:'alumno',email:'',verified:false,uid:null,gate:null,note:''};
+const isStaff=()=>auth.role!=='alumno';
+const ROLE={alumno:'Alumno',profesor:'Profesor',admin:'Administrador'};
+function evalGate(){if(isStaff()||!auth.uid){auth.gate=null;return}const e=auth.email||S.email;if(!e){auth.gate='email';return}if(!okDomain(e)){if(auth.verified){auth.gate='domain'}else{S.email='';auth.note='Ese correo no es de la universidad.';auth.gate='email'}return}auth.gate=null}
+function renderWho(){const el=$('who');if(el){const e=auth.email||S.email;el.textContent=auth.uid?(e?e+' · ':'')+ROLE[auth.role]:'Sin sesión'}const c=$('cmd'),b=auth.status==='checking'||!!auth.gate;if(c){c.disabled=b;c.placeholder=b?'Identifícate para empezar':''}}
+function renderGate(){if(auth.gate==='domain')return `<div class="card"><div class="kick">Acceso</div><h2>Usa tu correo de la universidad</h2><p class="story">Has entrado con <b>${esc(auth.email)}</b>, que no pertenece a la universidad (${UNI_DOMAINS.map(d=>'@'+d).join(', ')}). Cierra la sesión y vuelve a abrir el enlace con tu cuenta de la universidad para guardar tu progreso.</p></div>`;
+ return `<div class="card"><div class="kick">Acceso</div><h2>Identifícate para empezar</h2><p class="story">Escribe tu correo de la universidad. Sirve para guardar tu progreso y para que el profesorado vea tu nota.</p><div class="row"><input type="text" id="emailin" inputmode="email" placeholder="nombre@alum.uca.es" aria-label="Correo de la universidad"><button type="button" class="btn pri" data-act="login">Entrar</button></div>${auth.note?`<p class="fb bad">${esc(auth.note)}</p>`:''}</div>`}
+function renderResults(){const rows=ui.results||[],n=rows.length,avg=n?rows.reduce((t,r)=>t+(r.score||0),0)/n:0;
+ const tb=rows.map(r=>`<tr><td>${esc(r.name||'(sin nombre)')}</td><td>${esc(r.email||'')}${r.email&&!r.verified?' <small class="pts">sin verificar</small>':''}</td><td class="n">${fmt(r.score||0)}</td><td class="n">${r.items||0}/${r.total||0}</td><td class="n">${r.phases||0}/4</td><td>${r.updated?esc(new Date(r.updated).toLocaleString('es-ES')):''}</td></tr>`).join('')||'<tr><td colspan="6">Todavía no hay progreso guardado.</td></tr>';
+ let h=`<div class="card"><div class="kick">Profesorado</div><h2>Resultados</h2><p class="story">Progreso de cada alumno, actualizado en directo. Nota media: <b>${fmt(avg)}</b> sobre 10 (${n} ${n===1?'alumno':'alumnos'}).</p><div class="row"><button type="button" class="btn" data-act="csv">Descargar CSV</button></div><div class="tw" style="margin-top:12px"><table><thead><tr><th>Alumno</th><th>Correo</th><th class="n">Nota</th><th class="n">Tareas</th><th class="n">Fases</th><th>Última actividad</th></tr></thead><tbody>${tb}</tbody></table></div></div>`;
+ if(auth.role==='admin')h+=`<div class="card"><h3>Gestión de accesos</h3><ul><li><b>Alumnos:</b> comparte la página con permiso de Colaborador (enlace de la organización o invitando sus correos). Solo pueden hacer la actividad.</li><li><b>Profesores:</b> invita su correo con permiso de Editor desde el menú Compartir. Verán esta pestaña y podrán navegar por todas las fases sin bloqueos. Su actividad no entra en los resultados.</li><li>El rol se detecta solo al entrar. Tú, como propietario, eres administrador.</li></ul></div>`;
+ return h}
+function resultsInit(db,user){db.collection('progress').onSnapshot(async snap=>{const rows=snap.docs.map(d=>{const x=d.data();return{id:d.id,email:x.email||'',verified:!!x.verified,score:x.score,items:x.items,total:x.total,phases:x.phases,updated:x.updated}});const ps=await user.profiles(rows.map(r=>r.id));rows.forEach(r=>{const q=ps[r.id]||{};r.name=q.name||'';if(!r.email&&q.email)r.email=q.email});rows.sort((a,b)=>(a.name||a.email||'~').localeCompare(b.name||b.email||'~'));ui.results=rows;if(S.view===5)renderPanel()},()=>{})}
+async function initCloud(){
+ if(!window.claude||!claude.use){auth.status='local';setSync('local');renderAll();return}
+ setSync('connecting');
+ try{
+  const [db,user]=await Promise.all([withTimeout(claude.use('db'),10000),withTimeout(claude.use('user'),10000)]);
+  const me=user?await user.me():null;
+  if(!db||!me||!me.id){auth.status='local';setSync('local');renderAll();return}
+  auth.uid=me.id;auth.role=me.isOwner?'admin':me.canEdit?'profesor':'alumno';auth.email=me.email||'';auth.verified=!!me.email;
+  if(isStaff()){auth.status='ok';setSync('staff');resultsInit(db,user);renderAll();return}
+  const ref=db.collection('progress').doc(me.id),snap=await withTimeout(ref.get(),10000);cloud.ref=ref;
+  if(snap.exists){let r=null;try{r=JSON.parse(snap.data().s)}catch(e){}
+   if(r&&(r.rev||0)>=(S.rev||0)){S=Object.assign(fresh(),r);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!unlocked(S.view))S.view=1;ui.keys=null}}
+  evalGate();auth.status='ok';setSync('cloud');renderAll();if((S.rev||0)>0&&!auth.gate)cloudPush();
+ }catch(e){auth.status='local';setSync(e&&e.code==='invalid_argument'?'noaccess':'local');renderAll()}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&cloud.ref){clearTimeout(cloud.t);cloudPush()}});
+function welcome(){out('Agencia de Preservación Temporal · terminal de campo','n');out('Escribe help para ver los comandos disponibles.','dim');out('')}
+function renderRing(){const items=STEPS.filter(s=>isDone(s)).length+QS.filter(qDone).length,tot=STEPS.length+QS.length,pct=items/tot,C=2*Math.PI*22;let t='';for(let i=0;i<12;i++){const a=i*Math.PI/6,x1=28+Math.sin(a)*25.5,y1=28-Math.cos(a)*25.5,x2=28+Math.sin(a)*27.5,y2=28-Math.cos(a)*27.5;t+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--line)" stroke-width="1.5"/>`}
+ $('ring').innerHTML=`<svg width="56" height="56" viewBox="0 0 56 56" role="img" aria-label="${items} de ${tot} tareas">${t}<circle cx="28" cy="28" r="22" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="28" cy="28" r="22" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(C*pct).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 28 28)"/></svg><span><span class="sc"><b>${fmt(score())}</b> / 10</span>${items}/${tot} tareas</span>`}
+const unlocked=n=>n<=1||isStaff()||phaseDone(n-1);
+function renderPhases(){$('phases').innerHTML=`<button type="button" class="ph" role="tab" data-ph="0" aria-selected="${S.view===0}"><small>Caso</small><span>Instrucciones</span></button>`+PH.map((p,i)=>{const n=i+1,lock=!unlocked(n),dn=phaseDone(n);return `<button type="button" class="ph${dn?' done':''}" role="tab" data-ph="${n}" aria-selected="${S.view===n}" ${lock?'disabled':''}><small>Fase ${n}</small><span>${p.n}</span></button>`}).join('')+(isStaff()?`<button type="button" class="ph" role="tab" data-ph="5" aria-selected="${S.view===5}"><small>Profesorado</small><span>Resultados</span></button>`:'')}
+function ptsText(s){return isDone(s)?'+'+fmt(stepPts(s))+' pts':S.hints[s.id]?fmt(STEP_W/2)+' pts (con pista)':fmt(STEP_W)+' pts'}
+function stepExtra(s){
+ if(s.x==='url')return `<div class="box"><div>URL del repositorio</div><div class="row"><input type="text" id="url" readonly value="${esc(REPO_URL)}" aria-label="URL del repositorio"><button type="button" class="btn" data-act="copy">${ui.copied?'Copiada':'Copiar'}</button></div></div>`;
+ if(s.x==='code')return `<div class="box"><div class="row"><input type="text" id="codein" inputmode="numeric" maxlength="12" placeholder="Código de 5 cifras" aria-label="Código secreto" ${S.code?'value="52814" disabled':''}><button type="button" class="btn pri" data-act="code" ${S.code?'disabled':''}>Comprobar</button></div>${S.code?'<p class="fb ok">Código correcto. La puerta secreta se abre.</p>':ui.codeMsg?`<p class="fb bad">${ui.codeMsg}</p>`:''}</div>`;
+ return ''}
+function renderIntro(){const ns=STEPS.length,nq=QS.length;
+ return `<div class="card"><div class="kick">Agencia de Preservación Temporal</div><h2>Caso abierto: la desaparición de la Dra. Chrono</h2>
+ <p class="story">Eres un agente de la Agencia de Preservación Temporal y esta mañana te han llamado para un caso. La Dra. Chrono, una científica excéntrica, ha desaparecido sin dejar rastro. Nadie sabe nada, solo que trabajaba sin parar en su laboratorio. Muchos decían que nunca salía de él, e incluso pensaban que tanto trabajo estaba mermando su salud mental.</p>
+ <p class="goal"><b>Misión.</b> Reconstruir la historia de la Dra. Chrono siguiendo sus rastros y averiguar dónde está. Tu herramienta es Git y tu cuaderno de campo, un repositorio.</p></div>
+ <div class="card"><h3>Cómo se trabaja</h3><ul>
+ <li>En esta columna tienes la historia, los ejercicios y las preguntas de cada fase. Los ejercicios no se marcan a mano: se marcan solos cuando haces lo que piden.</li>
+ <li>Los comandos los escribes tú en el terminal de la derecha. Los necesarios están en el guión de la práctica.</li>
+ <li>Encima del terminal verás una escena con tu diario, el de la Dra. Chrono y las tres zonas de Git (directorio de trabajo, preparación y repositorio). Cambia con cada comando.</li>
+ <li>En el terminal, Tab autocompleta y las flechas ↑ ↓ recuperan comandos. Escribe <code>help</code> para ver los comandos disponibles.</li><li>Para leer un archivo, escribe <code>cat nombre</code> o púlsalo en la zona «Directorio de trabajo» de la escena.</li><li><b>Limpiar</b> solo borra el texto de la pantalla del terminal. No cambia tus archivos, tus repositorios ni tu nota.</li><li><b>Reiniciar entorno</b> vacía el escritorio simulado: borra las carpetas, archivos y repositorios que hayas creado y te devuelve a la carpeta inicial. Úsalo solo si te has atascado. Tu nota, tus ejercicios completados y tus respuestas se conservan, y los ejercicios ya completados no vuelven a dar puntos.</li></ul></div>
+ <div class="card"><h3>Puntuación</h3><div class="tw"><table><thead><tr><th>Parte</th><th class="n">Cantidad</th><th class="n">Cada una</th><th class="n">Total</th></tr></thead><tbody>
+ <tr><td>Ejercicios</td><td class="n">${ns}</td><td class="n">${fmt(STEP_W)}</td><td class="n">${fmt(STEP_W*ns)}</td></tr>
+ <tr><td>Preguntas de comprobación</td><td class="n">${nq}</td><td class="n">${fmt(Q_W)}</td><td class="n">${fmt(Q_W*nq)}</td></tr></tbody>
+ <tfoot><tr><td colspan="3">Nota máxima</td><td class="n">10,00</td></tr></tfoot></table></div>
+ <ul style="margin-top:12px"><li>Si abres la <b>pista</b> de un ejercicio antes de completarlo, ese ejercicio vale la mitad. Basta con desplegarla.</li>
+ <li>Para pasar a la siguiente fase debes completar todos sus ejercicios y responder todas sus preguntas. Cada pregunta tiene un solo intento: si fallas, esa pregunta vale 0 puntos, pero puedes continuar.</li>
+ <li>Tu nota aparece arriba a la derecha. Tu progreso se guarda solo y no se pierde al cerrar la pestaña. Ningún botón de la página reinicia la nota. Para que se guarde debes entrar con tu cuenta de la universidad.</li>
+ <li>Los entregables de cada fase (capturas del terminal) se entregan aparte, según indique el guión.</li></ul></div>
+ <div class="card"><h3>Antes de empezar</h3><ul><li>Ejecuta <code>git status</code> con frecuencia. Es inofensivo y te orienta siempre.</li><li>Comprueba en qué carpeta estás antes de usar comandos de Git. Fuera de un repositorio, Git responde <code>fatal: not a git repository</code>.</li><li>Lee lo que te devuelve el terminal. Los mensajes de Git suelen explicar el siguiente paso.</li></ul>
+ <div class="row" style="margin-top:14px"><button type="button" class="btn pri" data-act="start">Aceptar el caso</button></div></div>`}
+function renderPanel(){if(auth.status==='checking'){$('panel').innerHTML='<div class="card"><h3>Comprobando tu acceso…</h3><p class="deliv" style="margin:0">Un momento, estamos recuperando tu progreso.</p></div>';return}
+ if(auth.gate){$('panel').innerHTML=renderGate();return}
+ if(S.view===5&&!isStaff())S.view=1;
+ const n=S.view;if(n===0){$('panel').innerHTML=renderIntro();return}
+ if(n===5){$('panel').innerHTML=renderResults();return}
+ const P=PH[n-1],st=STEPS.filter(s=>s.p===n),qs=QS.filter(q=>q.p===n),dn=phaseDone(n),allDone=[1,2,3,4].every(phaseDone);
+ let h='';
+ if(allDone)h+=`<div class="card win"><h3>Nivel 1 superado</h3><p style="margin:0">La Dra. Chrono está a salvo. Tu nota es <b>${fmt(score())} / 10</b>. Recuerda preparar los entregables de cada fase y continúa con el Nivel 2.</p></div>`;
+ h+=`<div class="card"><div class="kick">Fase ${n} de 4</div><h2>${P.n}</h2><p class="story">${P.story}</p><p class="goal"><b>Objetivo.</b> ${P.goal}</p></div>`;
+ h+=`<div class="card"><h3>Ejercicios</h3><ol class="steps">${st.map(s=>`<li class="step${isDone(s)?' done':''}"><span class="tick" aria-hidden="true">✓</span><div class="st"><div>${s.t}<span class="pts">${ptsText(s)}</span></div>${stepExtra(s)}<details data-h="${s.id}" ${ui.open.has(s.id)?'open':''}><summary>Pista${isDone(s)||S.hints[s.id]?'':' (el ejercicio pasa a valer la mitad)'}</summary><div>${s.h}</div></details></div></li>`).join('')}</ol></div>`;
+ h+=`<div class="card"><h3>Preguntas de comprobación</h3><p class="deliv" style="margin:0">Cada pregunta tiene un solo intento. Si fallas, esa pregunta vale 0 puntos y puedes continuar.</p>${qs.map(q=>{const s=S.q[q.id]||{},done=qDone(q),L='ABC';const res=done?(s.ok?`<p class="fb ok">Correcto. ${q.e}</p>`:`<p class="fb bad">Incorrecta: esta pregunta vale 0 puntos. La respuesta correcta era la ${L[q.a]}. ${q.e}</p>`):`<div class="row" style="margin-top:6px"><button type="button" class="btn" data-act="q" data-q="${q.id}">Responder (un solo intento)</button></div>`;return `<fieldset data-q="${q.id}"><legend>${q.q} <span class="pts">${done?(s.ok?'+'+fmt(Q_W):'0,00'):fmt(Q_W)} pts</span></legend>${q.o.map((o,k)=>`<label><input type="radio" name="${q.id}" value="${k}" ${s.sel===k?'checked':''} ${done?'disabled':''}><span><b>${L[k]})</b> ${o}</span></label>`).join('')}${res}</fieldset>`}).join('')}</div>`;
+ const rs=st.filter(s=>!isDone(s)).length,rq=qs.filter(q=>!qDone(q)).length;
+ h+=`<div class="card"><h3>Entregable</h3><p class="deliv" style="margin:0">${P.deliv}</p>${dn?(n<4?`<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="next">Continuar a la fase ${n+1}</button></div>`:'<p class="deliv" style="margin:12px 0 0">Has completado el Nivel 1.</p>'):`<p class="deliv" style="margin:12px 0 0">Para pasar de fase te falta: ${[rs?rs+(rs===1?' ejercicio':' ejercicios'):'',rq?rq+(rq===1?' pregunta':' preguntas'):''].filter(Boolean).join(' y ')}.</p>`}</div>`;
+ const el=document.activeElement,keep=el&&el.id==='codein'?el.value:null;
+ $('panel').innerHTML=h;if(keep!==null&&$('codein')){$('codein').value=keep;$('codein').focus()}}
+function renderTerm(){const o=$('out');o.innerHTML=S.lines.map(l=>l.k==='cmd'?`<div><span class="p">${esc(l.p)}</span> ${esc(l.t)}</div>`:l.h!==undefined?`<div>${l.h}</div>`:`<div class="${l.c||'o'}">${esc(l.t)||' '}</div>`).join('');o.scrollTop=o.scrollHeight;$('pr').textContent=prompt()}
+const book=c=>`<svg class="bk ${c}" viewBox="0 0 40 48" aria-hidden="true"><rect class="cov" x="4" y="3" width="32" height="42" rx="3"/><rect class="sp" x="4" y="3" width="6" height="42" rx="2"/><rect class="pg" x="15" y="12" width="15" height="3" rx="1.5"/><rect class="pg" x="15" y="19" width="11" height="3" rx="1.5"/></svg>`;
+const monitor=`<svg class="mon" viewBox="0 0 32 30" aria-hidden="true"><rect x="2" y="2" width="28" height="18" rx="2"/><path d="M11 27h10M16 20v7"/></svg>`;
+function focusRoot(){if(ui.focus&&S.repos[ui.focus])return ui.focus;return findRepo(S.cwd)||Object.keys(S.repos)[0]||null}
+function renderScene(){const keys=new Set(),nw=k=>{keys.add(k);return ui.keys&&!ui.keys.has(k)?' new':''};
+ const dR=repoByName('diario-del-agente'),cR=repoByName('laboratorio-chrono'),fr=focusRoot();
+ const state=x=>{const i=info(x.root);return `${x.r.commits.length} ${x.r.commits.length===1?'commit':'commits'}${i.clean?'':' · cambios sin guardar'}`};
+ let h='<h3>Escena · tu escritorio de agente</h3><div class="tiles">';
+ h+=`<div class="tile"><div class="ti">${monitor}</div><div class="tt"><b>Ordenador del laboratorio</b><span>repositorio remoto</span><em>${CHRONO.length} commits · diarios de las semanas 1 a 3</em></div></div>`;
+ h+=dR?`<button type="button" class="tile${fr===dR.root?' sel':''}${nw('t:d')}" data-root="${esc(dR.root)}"><div class="ti">${book('')}</div><div class="tt"><b>Diario del agente</b><span>repositorio local · .git creado</span><em>${state(dR)}</em></div></button>`:`<div class="tile off"><div class="ti">${book('')}</div><div class="tt"><b>Sin diario todavía</b><span>Crea uno con git init</span></div></div>`;
+ h+=cR?`<button type="button" class="tile${fr===cR.root?' sel':''}${nw('t:c')}" data-root="${esc(cR.root)}"><div class="ti">${book('rem')}</div><div class="tt"><b>Diario de la Dra. Chrono</b><span>copia clonada · origin</span><em>${state(cR)}</em></div></button>`:`<div class="tile off"><div class="ti">${book('rem')}</div><div class="tt"><b>Sin copia todavía</b><span>Tráela con git clone</span></div></div>`;
+ h+='</div>';
+ if(!fr)h+='<p class="empty" style="margin-top:12px">Todavía no hay ningún repositorio. Cuando crees uno, aquí verás sus tres zonas: directorio de trabajo, preparación y repositorio.</p>';
+ else{const i=info(fr),sc=scan(fr),r=i.r,hd=head(r),rn=bn(fr);
+  const files=Object.keys(sc.work).sort().map(rel=>{const st=!(rel in r.index)?'u':sc.work[rel]!==r.index[rel]?'m':(rel in hd&&hd[rel]===r.index[rel])?'k':'s';return `<li class="fli"><button type="button" class="fc ${st}${nw('w:'+fr+rel+st)}${ui.file&&ui.file.root===fr&&ui.file.rel===rel?' on':''}" data-f="${esc(rel)}">${esc(rel)}</button></li>`}).concat(sc.nested.map(d=>`<li class="fc u${nw('w:'+fr+d)}">${esc(d)}/</li>`)).join('');
+  const stg=i.staged.map(([t,k])=>`<li class="fc s${nw('s:'+fr+k)}">${esc(k)}</li>`).join('');
+  const cms=r.commits.map((c,ix)=>({c,ix})).reverse().map(({c,ix})=>`<li class="cm${nw('c:'+fr+c.h)}"><span class="h">${c.h.slice(0,7)}</span><span class="ms">${esc(c.msg)}</span>${ix===r.commits.length-1?'<span class="pill">HEAD</span>':''}${r.remote&&ix===r.originIdx?'<span class="pill o">origin</span>':''}</li>`).join('');
+  const vp=ui.file&&ui.file.root===fr?fr+'/'+ui.file.rel:null,vf=vp&&S.fs[vp]&&!S.fs[vp].d?S.fs[vp].c:null;
+  const viewer=vf===null?'':`<div class="viewer"><div class="vh"><span>${esc(ui.file.rel)}</span><button type="button" data-close="1">Cerrar</button></div><pre>${esc(vf)||' '}</pre></div>`;
+  h+=`<div class="fh"><span>Repositorio en foco: <b>${esc(rn)}</b></span><span class="empty">pulsa un diario para cambiarlo o un archivo para leerlo</span></div><div class="zones">
+  <div class="zone"><h4>Directorio de trabajo</h4><small>tus archivos</small><ul>${files||'<li class="empty">Vacío</li>'}</ul></div>
+  <div class="zone"><h4>Preparación</h4><small>git add los trae aquí</small><ul>${stg||'<li class="empty">Nada preparado</li>'}</ul></div>
+  <div class="zone"><h4>Repositorio</h4><small>git commit los guarda · el más reciente arriba</small><ul>${cms||'<li class="empty">Sin commits</li>'}</ul></div></div>
+  ${viewer}<p class="lg">Archivos: rojo sin seguir · amarillo modificado · verde preparado · gris guardado</p>`}
+ $('scene').innerHTML=h;ui.keys=keys}
+function renderAll(){renderWho();renderRing();renderPhases();renderPanel();renderScene();renderTerm()}
+load();if(!S.lines.length)welcome();
+if(!unlocked(S.view))S.view=1;
+renderAll();
+initCloud();
+const hist={i:0};
+$('cmd').addEventListener('keydown',e=>{const el=e.target;
+ if(e.key==='Enter'){const v=el.value;el.value='';ui.focus=null;run(v);hist.i=S.hist.length;save();renderAll();el.focus()}
+ else if(e.key==='ArrowUp'){e.preventDefault();if(hist.i>0)hist.i--;el.value=S.hist[hist.i]||''}
+ else if(e.key==='ArrowDown'){e.preventDefault();if(hist.i<S.hist.length)hist.i++;el.value=S.hist[hist.i]||''}
+ else if(e.key==='Tab'){e.preventDefault();const r=complete(el.value);el.value=r.buf;if(r.opts.length){S.lines.push({k:'cmd',p:prompt(),t:el.value});out(r.opts.join('  '),'dim');renderTerm()}}
+ else if(e.key==='l'&&e.ctrlKey){e.preventDefault();S.lines=[];renderTerm()}});
+$('out').addEventListener('click',()=>{if(!getSelection().toString())$('cmd').focus()});
+$('bClear').addEventListener('click',()=>{S.lines=[];save();renderTerm();$('cmd').focus()});
+let rt=null;$('bReset').addEventListener('click',e=>{const b=e.currentTarget;if(rt){clearTimeout(rt);rt=null;{const k={done:S.done,hints:S.hints,q:S.q,code:S.code,view:S.view,notified:S.notified,rev:S.rev,email:S.email};S=Object.assign(fresh(),k)}ui.codeMsg=null;ui.focus=null;ui.keys=null;welcome();save();b.textContent='Reiniciar entorno';renderAll();return}b.textContent='¿Seguro? Pulsa otra vez';rt=setTimeout(()=>{rt=null;b.textContent='Reiniciar entorno'},3500)});
+$('phases').addEventListener('click',e=>{const b=e.target.closest('[data-ph]');if(!b||b.disabled)return;S.view=+b.dataset.ph;save();renderPhases();renderPanel()});
+$('scene').addEventListener('click',e=>{const f=e.target.closest('[data-f]');if(f){ui.file={root:focusRoot(),rel:f.dataset.f};renderScene();const v=$('scene').querySelector('.viewer');if(v)v.scrollIntoView({block:'nearest'});return}if(e.target.closest('[data-close]')){ui.file=null;renderScene();return}const b=e.target.closest('[data-root]');if(!b)return;ui.focus=b.dataset.root;renderScene()});
+$('panel').addEventListener('toggle',e=>{const d=e.target,id=d.dataset&&d.dataset.h;if(!id)return;
+ if(d.open){ui.open.add(id);const s=STEPS.find(x=>x.id===id);if(s&&!isDone(s)&&!S.hints[id]){S.hints[id]=1;save();renderRing();const b=d.closest('.step').querySelector('.pts');if(b)b.textContent=ptsText(s);const sm=d.querySelector('summary');if(sm)sm.textContent='Pista'}}else ui.open.delete(id)},true);
+$('panel').addEventListener('change',e=>{const t=e.target;if(t.type==='radio'){const id=t.name;if(S.q[id]&&(S.q[id].done||S.q[id].ok))return;S.q[id]=Object.assign(S.q[id]||{},{sel:+t.value});save()}});
+$('panel').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+ if(a==='start'){S.view=1;save();renderPhases();renderPanel();window.scrollTo({top:0,behavior:'smooth'})}
+ else if(a==='next'){S.view=Math.min(4,S.view+1);save();renderPhases();renderPanel();window.scrollTo({top:0,behavior:'smooth'})}
+ else if(a==='q'){const q=QS.find(x=>x.id===b.dataset.q),s=S.q[q.id]||{};if(s.sel===undefined||qDone(q))return;s.ok=s.sel===q.a;s.done=true;S.q[q.id]=s;notify();save();renderAll()}
+ else if(a==='code'){const v=($('codein').value||'').replace(/\s/g,'');if(v==='52814'){S.code=true;ui.codeMsg=null;out('✔ Código 52814 aceptado. Se abre la puerta secreta.','g');notify();save();renderAll()}else{ui.codeMsg=v?'Ese no es el código. Revisa las cifras de cada mensaje y el orden en que las has juntado.':'Escribe las 5 cifras.';renderPanel()}}
+ else if(a==='login'){const v=(($('emailin')||{}).value||'').trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){auth.note='Escribe un correo válido.'}else if(!okDomain(v)){auth.note='Usa tu correo de la universidad ('+UNI_DOMAINS.map(d=>'@'+d).join(' o ')+').'}else{S.email=v;auth.note='';evalGate();save();renderAll();return}renderPanel()}
+ else if(a==='csv'){(async()=>{try{const dl=await claude.use('downloads');if(!dl)return;const q=s=>'"'+String(s).replace(/"/g,'""')+'"';const csv='\ufeff'+['Alumno','Correo','Nota','Tareas hechas','Tareas totales','Fases completadas','Última actividad'].map(q).join(';')+'\n'+(ui.results||[]).map(r=>[r.name||'',r.email||'',fmt(r.score||0),r.items||0,r.total||0,r.phases||0,r.updated?new Date(r.updated).toLocaleString('es-ES'):''].map(q).join(';')).join('\n');await dl.save({filename:'resultados-git-nivel1.csv',data:csv})}catch(e){}})()}
+ else if(a==='copy'){const u=$('url');const done=()=>{ui.copied=true;b.textContent='Copiada';setTimeout(()=>{ui.copied=false;b.textContent='Copiar'},1800)};
+  try{navigator.clipboard.writeText(REPO_URL).then(done,()=>{u.select()})}catch(err){u.select()}}});
+$('panel').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='emailin'){e.preventDefault();$('panel').querySelector('[data-act=login]').click();return}if(e.key==='Enter'&&e.target.id==='codein'){e.preventDefault();e.target.closest('.box').querySelector('[data-act=code]').click()}});
+</script>
+
+</body></html>
